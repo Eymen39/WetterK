@@ -20,8 +20,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DrawerValue
@@ -39,6 +42,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,16 +57,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.eymen.weatherk.ui.theme.WeatherKTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Locale
 import kotlin.coroutines.CoroutineContext
 
-val locations = ArrayList<Orte>(listOf(
+var locations = ArrayList<Orte>(listOf(
     Orte("Berlin", 52.52f, 13.405f),
     Orte("Paris", 48.8566f, 2.3522f),
     Orte("New York", 40.7128f, -74.0060f)
@@ -72,13 +79,14 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var orteDAO: OrteDAO
     private lateinit var usedPlace:Orte
+    private lateinit var viewModel:ViewModelMain
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
                 WeatherKTheme(){
                     Greeting("Eymen")
-                    LocationDrawer(locations) { location-> Log.d("info", location.name)}
+                    LocationDrawer(savedOrteFlow = viewModel.orte, viewModelMain = viewModel) { location-> Log.d("info", location.name)}
 
 
                 }
@@ -87,12 +95,16 @@ class MainActivity : AppCompatActivity() {
 
         dataBase=OrteDataBase.getDataBase(this)
         orteDAO=dataBase.OrteDAO()
+        viewModel= ViewModelProvider(this,MainViewModelFactory(orteDAO,this))
+            .get(ViewModelMain::class.java)
 
-        lifecycleScope.launch {
 
-            orteDAO.insert(OrteEntity(name=locations[1].name, latitude = locations[1].latitude, longitude = locations[1].longitude))
 
-        }
+//        lifecycleScope.launch {
+//
+//            orteDAO.insert(OrteEntity(name=locations[1].name, latitude = locations[1].latitude, longitude = locations[1].longitude))
+//
+//        }
 
     }
 }
@@ -127,8 +139,7 @@ fun Greeting(name:String) {
 @Composable
 fun DefaultPreview(){
     WeatherKTheme(){
-        Greeting("Eymen")
-        LocationDrawer(locations) { location-> }
+        //LocationDrawer() { }
     }
 
 }
@@ -171,14 +182,16 @@ fun SavedLocationDrawer()
 */
 @Composable
 fun LocationDrawer(
-    savedOrte:ArrayList<Orte>,
-    onLocationSelected: (Orte) -> Unit
+    savedOrteFlow:StateFlow<List<OrteEntity>>,viewModelMain: ViewModelMain,
+    onLocationSelected: (Orte) -> Unit //damit akann ich für jeden aufruf dieser Funktion
 ) {
     val context = LocalContext.current
     var drawerState = rememberDrawerState(DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
+    val savedOrte by savedOrteFlow.collectAsState()
+
     var selectedOrt by remember {mutableStateOf<Orte?>(null)}
-LaunchedEffect(selectedOrt) {
+    LaunchedEffect(selectedOrt) {
     selectedOrt?.let{
         ort->
         Log.d("LocationDrawer", "Neuer Ort ist: ${ort.name}")
@@ -202,28 +215,33 @@ LaunchedEffect(selectedOrt) {
 
 
 
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    items(savedOrte){location->
+                        ListItem(
+                            headlineContent = { Text(location.name) },
+                            supportingContent = { Text("Lat: ${location.latitude}, Lon: ${location.longitude}") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onLocationSelected(location.getOrte())
+                                    coroutineScope.launch { drawerState.close() }
+                                })
+                        HorizontalDivider()
 
-                savedOrte.forEach { location ->
-                    ListItem(
-                        headlineContent = { Text(location.name) },
-                        supportingContent = { Text("Lat: ${location.latitude}, Lon: ${location.longitude}") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                onLocationSelected(location)
-                                coroutineScope.launch { drawerState.close() }
-                            }
-
-                    )
-                    HorizontalDivider()
+                    }
                 }
-            }
+                /*savedOrte.forEach { location ->
+                */
+
+
+
+                }
         },
         drawerState = drawerState
     ) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Button(onClick = { coroutineScope.launch { drawerState.open() } }) {
-                Text("Menü öffnen")
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopStart) {
+            IconButton(onClick = { coroutineScope.launch { drawerState.open() } }){
+                Icon(Icons.Default.Menu,null)
             }
         }
     }
@@ -239,8 +257,9 @@ LaunchedEffect(selectedOrt) {
             },
             confirmButton = { Button(onClick = {
                 if(newOrteName.isNotEmpty()){
-                    insertinCache(newOrteName, locations,context)
-                    insertOrt(newOrteName,context)
+                    //nsertinCache(newOrteName, locations,context)
+                    //insertOrt(newOrteName,context)
+                    viewModelMain.addOrt(newOrteName,context)
                 }else{
                     Toast.makeText(context,"Geben sie einen validen Ort ein",Toast.LENGTH_SHORT).show()
                 }

@@ -8,4 +8,10 @@ class OrteEntity(
     @PrimaryKey(autoGenerate = true)val id: Long=0,
     val name:String,
     val latitude:Float,
-    val longitude:Float)
+    val longitude:Float) {
+    fun getOrte(): Orte {
+
+
+        return Orte(name, longitude,latitude)
+    }
+}
