@@ -4,9 +4,9 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "Orte")
-class OrteEntity(
-    @PrimaryKey(autoGenerate = true)val id: Long=0,
-    val name:String,
+data class OrteEntity(
+    @PrimaryKey val name:String,
+    val countryname:String,
     val latitude:Float,
     val longitude:Float) {
     fun getOrte(): Orte {
