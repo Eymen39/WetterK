@@ -8,7 +8,7 @@ class MainViewModelFactory(private val orteDAO: OrteDAO,private val context: Con
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return if (modelClass.isAssignableFrom(ViewModelMain::class.java)) {
-            ViewModelMain(orteDAO, context) as T
+            ViewModelMain(orteDAO) as T
         } else {
             throw IllegalArgumentException("Unknown ViewModel class")
         }

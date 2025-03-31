@@ -92,6 +92,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContent {
                 WeatherKTheme(){
+                    ShowWeather(viewModel)
                     LocationDrawer(savedOrteFlow = viewModel.orte, viewModelMain = viewModel) { location-> Log.d("info", location.placeName)}
 
 
@@ -124,8 +125,21 @@ class MainActivity : AppCompatActivity() {
 
     @Composable
 fun ShowWeather(viewModelMain: ViewModelMain){
+val foundPlace by viewModelMain.selectedPlace.collectAsState()
 
-   // Text(text =)
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
+        ){
+            Column (horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center){
+                Text(foundPlace.placeName)
+                Text(foundPlace.countryName)
+                Text(foundPlace.lat.toString())
+                Text(foundPlace.lon.toString()) }
+        }
+
+
+
+
 }
 
 @Preview(showBackground = true)
@@ -208,6 +222,8 @@ fun LocationDrawer(
                                 .clickable {
                                     onLocationSelected(location.getOrte())
                                     coroutineScope.launch { drawerState.close() }
+                                    viewModelMain.selectPlace(location.getOrte())
+
                                 })
                         HorizontalDivider()
 

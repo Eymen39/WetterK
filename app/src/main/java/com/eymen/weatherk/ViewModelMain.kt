@@ -23,6 +23,9 @@ class ViewModelMain(private val orteDAO:OrteDAO): ViewModel()
     private val _newFoundPlaces= MutableStateFlow<List<FoundPlace>>(emptyList())
     val newFoundPlace :StateFlow<List<FoundPlace>> = _newFoundPlaces.asStateFlow()
 
+  private val _selectedPlace= MutableStateFlow<FoundPlace>(FoundPlace("Berlin", "Deutschland",12f,12f))
+    val selectedPlace :StateFlow<FoundPlace> = _selectedPlace
+
 
 
 
@@ -51,6 +54,10 @@ class ViewModelMain(private val orteDAO:OrteDAO): ViewModel()
                 )
 
         }
+    }
+
+    fun selectPlace(newPlace:FoundPlace){
+        _selectedPlace.value=newPlace
     }
     fun getCoordinates(name:String, context: Context){
 
