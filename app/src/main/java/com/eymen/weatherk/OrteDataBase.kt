@@ -6,7 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 
-@Database(entities = [OrteEntity::class], version = 2, exportSchema = true)
+@Database(entities = [OrteEntity::class], version = 3, exportSchema = true)
 abstract class OrteDataBase :RoomDatabase(){
     abstract fun OrteDAO(): OrteDAO
 

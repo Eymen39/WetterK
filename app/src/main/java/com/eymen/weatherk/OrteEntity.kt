@@ -8,10 +8,12 @@ data class OrteEntity(
     @PrimaryKey val name:String,
     val countryname:String,
     val latitude:Float,
-    val longitude:Float) {
-    fun getOrte(): FoundPlace {
+    val longitude:Float,
+    val current:Boolean
+    ) {
+    fun getFoundPlace(): FoundPlace {
 
 
-        return FoundPlace(name,countryname, longitude,latitude)
+        return FoundPlace(name,countryname, longitude,latitude,current)
     }
 }

@@ -8,9 +8,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.count
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Locale
@@ -23,8 +25,8 @@ class ViewModelMain(private val orteDAO:OrteDAO): ViewModel()
     private val _newFoundPlaces= MutableStateFlow<List<FoundPlace>>(emptyList())
     val newFoundPlace :StateFlow<List<FoundPlace>> = _newFoundPlaces.asStateFlow()
 
-  private val _selectedPlace= MutableStateFlow<FoundPlace>(FoundPlace("Berlin", "Deutschland",12f,12f))
-    val selectedPlace :StateFlow<FoundPlace> = _selectedPlace
+    val selectedPlace: StateFlow<OrteEntity?> = orteDAO.getCurrent()
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
 
 
@@ -36,8 +38,9 @@ class ViewModelMain(private val orteDAO:OrteDAO): ViewModel()
             orteDAO.getAllOrte().collect{ orteDB->
                 _orte.value=orteDB
             }
+            }
 
-        }
+
     }
 
 
@@ -49,15 +52,16 @@ class ViewModelMain(private val orteDAO:OrteDAO): ViewModel()
                         newPlace.placeName,
                         newPlace.countryName,
                         newPlace.lat,
-                        newPlace.lon
+                        newPlace.lon,
+                        false
                     )
                 )
 
         }
     }
 
-    fun selectPlace(newPlace:FoundPlace){
-        _selectedPlace.value=newPlace
+    suspend fun selectPlace(newPlace:FoundPlace){
+        orteDAO.setCurrent(newPlace.placeName)
     }
     fun getCoordinates(name:String, context: Context){
 
@@ -68,7 +72,7 @@ class ViewModelMain(private val orteDAO:OrteDAO): ViewModel()
             //val address= addressList?.getOrNull(0)
             if(!addressList.isNullOrEmpty()){
                 for (address in addressList){
-                    val placeForList=FoundPlace(address.featureName,address.countryName,address.longitude.toFloat(), address.latitude.toFloat())
+                    val placeForList=FoundPlace(address.featureName,address.countryName,address.longitude.toFloat(), address.latitude.toFloat(),false)
                     _newFoundPlaces.value += placeForList
                 }
                 //val longitude= address.longitude.toFloat()
